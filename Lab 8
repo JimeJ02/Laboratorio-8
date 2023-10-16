@@ -1,0 +1,152 @@
+//Jimena Juarez 21589
+//Laboratorio 8
+
+//Definición de librerias
+#include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
+
+//Definición del pin para la tarjeta sd
+#define CS_PIN 10
+
+File root;
+File myFile;
+
+String figuraUsuario = ""; // Variable para almacenar el mensaje del usuario
+
+bool menuDisplayed = false; //Para hacer que el menú se muestre 1 vez
+
+void setup() {
+  Serial.begin(115200);
+
+  Serial.print("Iniciando Tarjeta SD"); //Para iniciar la tarjeta
+  pinMode(CS_PIN, OUTPUT);
+
+  if (!SD.begin(CS_PIN)) {
+    Serial.println("Tarjeta SD fallida"); //Mnesaje de error para identificar que la tarjeta no está funcionando
+    while (true);
+  }
+
+  Serial.println("Inicialización completa"); //Para identificar su correcto funcionamiento
+
+  root = SD.open("/");
+  printDirectory(root, 0);
+  Serial.println("Completado"); //Para identificar que se leyó la tarjeta
+}
+
+void printDirectory(File dir, int numTabs) {
+  while (true) {
+    File entry = dir.openNextFile();
+    if (!entry) {
+      break;
+    }
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('\t');
+    }
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("/");
+      printDirectory(entry, numTabs + 1);
+    } else {
+      Serial.print("\t\t");
+      Serial.println(entry.size(), DEC);
+    }
+    entry.close();
+  }
+}
+
+void menu() {
+  if (!menuDisplayed) {
+    Serial.println("Elige la figura: ");
+    Serial.println("1) Corazón");
+    Serial.println("2) Flor");
+    Serial.println("3) Diamante");
+    Serial.println("4) Ingresa tu propia figura");
+    Serial.println("5) Mostrar figura ingresada");
+    menuDisplayed = true; //Para identificar que se mostró el menú
+  }
+}
+
+void loop() {
+  menu();
+
+  char selection;
+  while (!Serial.available()) {
+  }
+
+  selection = Serial.read();
+
+  switch (selection) {
+    case '1': //mostrar el contenido del archivo del corazón
+      root = SD.open("corazon.txt"); 
+      if(root){
+        Serial.println("corazon.txt"); 
+        
+        while(root.available()){
+          Serial.write(root.read());
+        }
+        root.close(); 
+       } else{
+          Serial.println("Error al abrir la figura"); //indica el error al mostrar la figura
+        }
+      menuDisplayed = false; // Restablece la bandera para mostrar el menú nuevamente.
+      break;
+
+    case '2': //mostrar el archivo de la flor
+      root = SD.open("flor.txt"); 
+      if(root){
+        Serial.println("flor.txt"); 
+        
+        while(root.available()){
+          Serial.write(root.read());
+        }
+        root.close(); 
+       } else{
+          Serial.println("Error al abrir la figura"); //indica error al mostrar la figura
+        }
+      menuDisplayed = false; // Restablece la bandera para mostrar el menú nuevamente.
+      break;
+
+    case '3': //mostrar el archivo del diamante
+      root = SD.open("diamante.txt"); 
+      if(root){
+        Serial.println("diamante.txt"); 
+        
+        while(root.available()){
+          Serial.write(root.read());
+        }
+        root.close(); 
+       } else{
+          Serial.println("Error al abrir la figura"); //indica error al mostrar la figura
+        }
+      menuDisplayed = false; // Restablece la bandera para mostrar el menú nuevamente.
+      break;
+
+    case '4': //pide al usuario ingresar una figura
+      Serial.println("Ingresa tu figura y presiona Enter:");
+      figuraUsuario = Serial.readStringUntil('\n');
+
+      if (!figuraUsuario.equals("")) {
+        myFile = SD.open("usuario.txt", FILE_WRITE);
+        if (myFile) {
+          Serial.println("Escribiendo en usuario.txt...");
+          myFile.print(figuraUsuario);
+          myFile.close();
+          Serial.println("Figura guardada: " + figuraUsuario);
+        } else {
+          Serial.println("Error al abrir el archivo de usuario"); //indica error al mostrar la figura
+        }
+      }
+      menuDisplayed = false; // Restablece la bandera para mostrar el menú nuevamente.
+      break;
+
+    case '5':
+      Serial.println("Figura ingresada usuario: " + figuraUsuario);
+      menuDisplayed = false; // Restablece la bandera para mostrar el menú nuevamente.
+      break;
+
+    default:
+      Serial.println("Elige nuevamente");
+  }
+}
+
